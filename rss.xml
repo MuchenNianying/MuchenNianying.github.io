@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>暮晨念影</title><description>MuchenNianying</description><link>https://fuwari.vercel.app/</link><language>zh_CN</language><item><title>CF-Cron - Cloudflare Worker 定时任务管理系统</title><link>https://fuwari.vercel.app/posts/cloudflare/cf-cron/</link><guid isPermaLink="true">https://fuwari.vercel.app/posts/cloudflare/cf-cron/</guid><description>基于 Cloudflare Workers 和 D1 数据库的定时任务管理系统，支持 HTTP 请求类型的定时任务</description><pubDate>Fri, 13 Feb 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;CF-Cron - Cloudflare Worker 定时任务管理系统&lt;/h1&gt;
+&lt;h2&gt;📝 项目概述&lt;/h2&gt;
+&lt;p&gt;CF-Cron 是一款基于 Cloudflare Workers 和 D1 数据库构建的定时任务管理系统，灵感来源于 gocron 的设计思路。该系统专注于 HTTP 请求类型的定时任务管理，并提供了功能完整的 Web 管理界面，方便用户直观地操作和监控定时任务。&lt;/p&gt;
+&lt;h2&gt;✨ 核心功能&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;完整的任务生命周期管理&lt;/strong&gt;：支持创建、编辑、删除、启用/禁用定时任务&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;灵活的 HTTP 请求支持&lt;/strong&gt;：兼容 GET、POST 等多种请求方法&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;高度自定义配置&lt;/strong&gt;：允许设置自定义请求头和请求体&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;详细的日志记录系统&lt;/strong&gt;：完整记录任务执行日志和系统登录日志&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;精细的角色权限控制&lt;/strong&gt;：区分管理员和普通用户权限&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;现代化响应式界面&lt;/strong&gt;：基于 Ant Design 构建的美观用户界面&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;性能优化机制&lt;/strong&gt;：实现任务缓存，减少数据库查询压力&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;智能 Token 管理&lt;/strong&gt;：Token 过期后自动跳转到登录页面&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;资源使用监控&lt;/strong&gt;：优化任务执行过程中的资源消耗&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;🛠️ 技术架构&lt;/h2&gt;
+&lt;h3&gt;前端技术栈&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;React + TypeScript：构建现代化、类型安全的前端应用&lt;/li&gt;
+&lt;li&gt;Vite：快速的前端构建工具&lt;/li&gt;
+&lt;li&gt;Ant Design：提供丰富的 UI 组件&lt;/li&gt;
+&lt;li&gt;React Router：管理前端路由&lt;/li&gt;
+&lt;li&gt;Fetch API：处理 HTTP 客户端请求&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;后端技术栈&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Cloudflare Workers：无服务器计算平台&lt;/li&gt;
+&lt;li&gt;Hono Web 框架：轻量高效的 API 框架&lt;/li&gt;
+&lt;li&gt;Cloudflare D1 数据库：SQLite 兼容的边缘数据库&lt;/li&gt;
+&lt;li&gt;JWT 认证：安全的用户身份验证&lt;/li&gt;
+&lt;li&gt;Cron 表达式解析：精确调度定时任务&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;📁 项目结构&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;cf-cron/
+├── client/              # 前端应用
+│   ├── public/          # 静态资源文件
+│   ├── src/             # 前端源代码
+│   │   ├── components/  # 可复用组件
+│   │   ├── pages/       # 页面组件
+│   │   ├── App.tsx      # 应用主入口
+│   │   └── main.tsx     # 渲染入口
+│   ├── package.json     # 前端依赖配置
+│   └── vite.config.ts   # Vite 构建配置
+├── server/              # 后端服务
+│   ├── routes/          # API 路由定义
+│   ├── services/        # 业务逻辑层
+│   ├── sql/             # 数据库相关文件
+│   ├── index.ts         # 后端应用入口
+│   ├── package.json     # 后端依赖配置
+│   └── wrangler.toml    # Cloudflare Workers 配置
+├── .gitignore           # Git 忽略规则
+└── README.md            # 项目文档
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;🚀 部署指南&lt;/h2&gt;
+&lt;h3&gt;1. 环境准备&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Node.js 20+ 运行环境&lt;/li&gt;
+&lt;li&gt;npm 或 yarn 包管理工具&lt;/li&gt;
+&lt;li&gt;Cloudflare 账户&lt;/li&gt;
+&lt;li&gt;Wrangler CLI 工具（&lt;code&gt;npm install -g wrangler&lt;/code&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;2. 依赖安装&lt;/h3&gt;
+&lt;h4&gt;前端依赖&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd client
+npm install
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;后端依赖&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd server
+npm install
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;3. 本地开发&lt;/h3&gt;
+&lt;h4&gt;启动后端服务&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd server
+npm run dev -- --test-scheduled
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;服务将运行在 &lt;code&gt;http://localhost:8787&lt;/code&gt;&lt;/p&gt;
+&lt;h4&gt;启动前端开发服务器&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd client
+npm run dev
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;前端将运行在 &lt;code&gt;http://localhost:5173&lt;/code&gt;&lt;/p&gt;
+&lt;h3&gt;4. Cloudflare 部署&lt;/h3&gt;
+&lt;h4&gt;准备工作&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;登录 Cloudflare 账户&lt;/li&gt;
+&lt;li&gt;创建新的 Worker 项目&lt;/li&gt;
+&lt;li&gt;配置 D1 数据库（命名为 &lt;code&gt;cf-cron-db&lt;/code&gt;）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;配置 Wrangler&lt;/h4&gt;
+&lt;p&gt;编辑 &lt;code&gt;server/wrangler.toml&lt;/code&gt; 文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;name = &quot;cf-cron&quot;
+main = &quot;index.ts&quot;
+compatibility_date = &quot;2025-12-08&quot;
+
+d1_databases = [
+  {
+    binding = &quot;DB&quot;,
+    database_name = &quot;cf-cron-db&quot;,
+    database_id = &quot;&quot;  # 填写 Cloudflare 控制台中的数据库 ID
+  }
+]
+
+[vars]
+JWT_SECRET = &quot;&quot;  # 配置安全的 JWT 密钥
+
+[triggers]
+crons = [&quot;* * * * *&quot;]  # 每分钟检查一次任务
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;数据库初始化&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd server
+npm run db:migrate
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;部署后端&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd server
+npm run deploy
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;配置前端 API 地址&lt;/h4&gt;
+&lt;p&gt;在 &lt;code&gt;client/.env&lt;/code&gt; 文件中添加：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;VITE_SERVER_URL=https://YOUR_WORKER_NAME.YOUR_ACCOUNT.workers.dev/api
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;构建前端&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;cd client
+npm run build
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;部署前端&lt;/h4&gt;
+&lt;p&gt;将 &lt;code&gt;client/dist&lt;/code&gt; 目录部署到 Cloudflare Pages。&lt;/p&gt;
+&lt;h2&gt;📊 数据模型&lt;/h2&gt;
+&lt;h3&gt;用户表 (&lt;code&gt;users&lt;/code&gt;)&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;id&lt;/code&gt;: 用户唯一标识&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;username&lt;/code&gt;: 用户名（唯一）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;password&lt;/code&gt;: 密码哈希值&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;salt&lt;/code&gt;: 密码加密盐值&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;email&lt;/code&gt;: 邮箱地址（唯一）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;is_admin&lt;/code&gt;: 是否为管理员&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;status&lt;/code&gt;: 用户状态（启用/禁用）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;created&lt;/code&gt;: 创建时间&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;updated&lt;/code&gt;: 更新时间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;任务表 (&lt;code&gt;tasks&lt;/code&gt;)&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;id&lt;/code&gt;: 任务唯一标识&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;name&lt;/code&gt;: 任务名称&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;level&lt;/code&gt;: 任务优先级&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;spec&lt;/code&gt;: Cron 表达式&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;protocol&lt;/code&gt;: 执行协议（1=HTTP）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;command&lt;/code&gt;: 请求 URL&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;http_method&lt;/code&gt;: HTTP 请求方法&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;timeout&lt;/code&gt;: 超时时间（秒）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;retry_times&lt;/code&gt;: 失败重试次数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;retry_interval&lt;/code&gt;: 重试间隔（秒）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;status&lt;/code&gt;: 任务状态（启用/禁用）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;request_headers&lt;/code&gt;: HTTP 请求头（JSON 格式）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;request_body&lt;/code&gt;: HTTP 请求体&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;created&lt;/code&gt;: 创建时间&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;deleted&lt;/code&gt;: 删除时间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;🔐 系统默认账户&lt;/h2&gt;
+&lt;p&gt;系统初始化后自动创建默认管理员账户：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;用户名&lt;/strong&gt;: &lt;code&gt;admin&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;密码&lt;/strong&gt;: &lt;code&gt;123456&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ &lt;strong&gt;安全提示&lt;/strong&gt;：首次登录后请立即修改默认密码！&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;📖 使用教程&lt;/h2&gt;
+&lt;h3&gt;1. 登录系统&lt;/h3&gt;
+&lt;p&gt;访问部署后的前端页面，使用默认账户登录。&lt;/p&gt;
+&lt;h3&gt;2. 任务管理&lt;/h3&gt;
+&lt;h4&gt;创建新任务&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;导航至「任务管理」→「新建任务」&lt;/li&gt;
+&lt;li&gt;填写任务基本信息：名称、Cron 表达式&lt;/li&gt;
+&lt;li&gt;配置 HTTP 请求：方法、URL、请求头、请求体&lt;/li&gt;
+&lt;li&gt;设置高级选项：超时时间、重试策略&lt;/li&gt;
+&lt;li&gt;确认任务状态并保存&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;执行任务&lt;/h4&gt;
+&lt;p&gt;在任务列表中找到目标任务，点击「执行」按钮立即运行任务。&lt;/p&gt;
+&lt;h4&gt;监控任务&lt;/h4&gt;
+&lt;p&gt;通过「任务日志」查看所有任务的执行历史和结果。&lt;/p&gt;
+&lt;h3&gt;3. 用户管理（管理员功能）&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;查看系统用户列表&lt;/li&gt;
+&lt;li&gt;创建新用户并分配权限&lt;/li&gt;
+&lt;li&gt;编辑现有用户信息&lt;/li&gt;
+&lt;li&gt;禁用或启用用户账户&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;⏰ Cron 表达式语法&lt;/h2&gt;
+&lt;p&gt;系统采用标准 5 位 Cron 表达式格式：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌───────────── 分钟 (0-59)
+│ ┌───────────── 小时 (0-23)
+│ │ ┌───────────── 日 (1-31)
+│ │ │ ┌───────────── 月 (1-12)
+│ │ │ │ ┌───────────── 星期 (0-6) (0 表示星期日)
+│ │ │ │ │
+* * * * *
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;常用表达式示例&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;* * * * *&lt;/code&gt; - 每分钟执行&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;0 * * * *&lt;/code&gt; - 每小时执行&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;0 0 * * *&lt;/code&gt; - 每天午夜执行&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;0 0 * * 0&lt;/code&gt; - 每周日午夜执行&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;0 0 1 * *&lt;/code&gt; - 每月1日午夜执行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;🔍 故障排查&lt;/h2&gt;
+&lt;h3&gt;任务执行失败&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;检查任务是否已启用&lt;/li&gt;
+&lt;li&gt;验证 Cron 表达式是否正确&lt;/li&gt;
+&lt;li&gt;确认目标 URL 是否可访问&lt;/li&gt;
+&lt;li&gt;查看任务日志获取详细错误信息&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;登录问题&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;确认用户名和密码是否正确&lt;/li&gt;
+&lt;li&gt;检查后端服务是否正常运行&lt;/li&gt;
+&lt;li&gt;查看浏览器控制台的错误信息&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;部署问题&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;确认 Wrangler 配置文件中的 &lt;code&gt;crons&lt;/code&gt; 触发器已设置&lt;/li&gt;
+&lt;li&gt;检查 Cloudflare Worker 的运行状态&lt;/li&gt;
+&lt;li&gt;验证数据库连接配置是否正确&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;🛡️ 安全最佳实践&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;修改默认凭证&lt;/strong&gt;：首次部署后立即更改管理员密码&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;启用 HTTPS&lt;/strong&gt;：确保所有通信通过加密通道传输&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;访问控制&lt;/strong&gt;：使用 Cloudflare Access 限制管理界面访问&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;定期备份&lt;/strong&gt;：建立 D1 数据库的定期备份机制&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;强密码策略&lt;/strong&gt;：为所有用户账户设置复杂密码&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;最小权限原则&lt;/strong&gt;：仅为必要用户分配管理员权限&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;🤝 参与贡献&lt;/h2&gt;
+&lt;p&gt;欢迎通过 GitHub Issues 和 Pull Request 参与项目改进，共同构建更完善的定时任务管理系统！&lt;/p&gt;
+&lt;h2&gt;📄 开源许可&lt;/h2&gt;
+&lt;p&gt;本项目采用 MIT License 开源协议。&lt;/p&gt;
+&lt;h2&gt;📞 支持与反馈&lt;/h2&gt;
+&lt;p&gt;如有任何问题或建议，欢迎通过 GitHub Issues 提交反馈。&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;&lt;strong&gt;免责声明&lt;/strong&gt;：本系统主要面向学习和内部使用场景，生产环境部署请确保实施充分的安全措施。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;项目地址&lt;/strong&gt;：&lt;a href=&quot;https://github.com/MuchenNianying/cf-cron&quot;&gt;https://github.com/MuchenNianying/cf-cron&lt;/a&gt;&lt;/p&gt;
+</content:encoded></item><item><title>【超详细教程】从 0 搭建 Fuwari 博客</title><link>https://fuwari.vercel.app/posts/blog/fuwari-blog-build/</link><guid isPermaLink="true">https://fuwari.vercel.app/posts/blog/fuwari-blog-build/</guid><description>记录我从 0 开始搭建基于 Fuwari 主题的博客</description><pubDate>Wed, 28 Jan 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;前言&lt;/h2&gt;
+&lt;p&gt;Fuwari 作为一款基于 Astro 框架的现代博客主题，以其简洁美观的设计和强大的功能受到了越来越多开发者的喜爱。本教程将带你从 0 开始，一步步搭建属于自己的 Fuwari 博客。&lt;/p&gt;
+&lt;h2&gt;准备工作&lt;/h2&gt;
+&lt;p&gt;在开始搭建之前，我们需要准备一些必要的工具和环境：&lt;/p&gt;
+&lt;h3&gt;1. 安装 Node.js&lt;/h3&gt;
+&lt;p&gt;Fuwari 基于 Astro 框架，而 Astro 需要 Node.js 环境。请确保你的系统上安装了 Node.js 18.0 或更高版本。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows/macOS&lt;/strong&gt;：访问 &lt;a href=&quot;https://nodejs.org/&quot;&gt;Node.js 官网&lt;/a&gt; 下载安装包并安装&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Linux&lt;/strong&gt;：使用包管理器安装，例如 &lt;code&gt;sudo apt install nodejs npm&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;安装完成后，打开终端（命令提示符）运行以下命令验证安装，能够提示出来版本信息，说明安装成功：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;node -v
+npm -v
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;https://cdn.mcny.dpdns.org/images/2026/01/img-3a13b72362f184c6.webp&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h4&gt;安装 pnpm（推荐）&lt;/h4&gt;
+&lt;p&gt;pnpm 是一个快速、节省空间的 Node.js 包管理器，推荐使用它来管理项目依赖：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;npm install -g pnpm
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：在 Windows 上遇到权限问题时，请以管理员身份运行命令提示符。&lt;/p&gt;
+&lt;p&gt;验证 pnpm 安装，能够提示出来版本信息，说明安装成功：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pnpm -v
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;2. 安装 Git&lt;/h3&gt;
+&lt;p&gt;Git 是版本控制系统，我们需要它来克隆 Fuwari 仓库和管理代码：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows&lt;/strong&gt;：访问 &lt;a href=&quot;https://git-scm.com/&quot;&gt;Git 官网&lt;/a&gt; 下载安装包&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;macOS&lt;/strong&gt;：使用 Homebrew 安装 &lt;code&gt;brew install git&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Linux&lt;/strong&gt;：使用包管理器安装，例如 &lt;code&gt;sudo apt install git&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;验证安装：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git --version
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;3. 创建 GitHub 仓库（可选）&lt;/h3&gt;
+&lt;p&gt;如果你计划将博客部署到 GitHub Pages 或其他需要 Git 仓库的平台，建议先在 GitHub 上创建一个新的仓库。&lt;/p&gt;
+&lt;h2&gt;第一步：初始化项目&lt;/h2&gt;
+&lt;h3&gt;方法一：直接克隆 Fuwari 仓库&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;打开终端，导航到你想要存放博客的目录：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;cd /path/to/your/blog/folder
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;克隆 Fuwari 仓库：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/saicaca/fuwari.git
+cd fuwari
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;方法二：使用 npm create vite@latest&lt;/h3&gt;
+&lt;p&gt;如果你使用的是较新版本的 npm，可以使用 &lt;code&gt;npm create&lt;/code&gt; 命令快速初始化项目：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;npm create vite@latest my-fuwari-blog -- --template astro
+cd my-fuwari-blog
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后手动安装 Fuwari 主题依赖。&lt;/p&gt;
+&lt;h2&gt;第二步：安装依赖&lt;/h2&gt;
+&lt;p&gt;无论使用哪种方法初始化项目，都需要安装依赖：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pnpm install
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;第三步：基本配置&lt;/h2&gt;
+&lt;p&gt;Fuwari 的配置文件位于 &lt;code&gt;src/config.ts&lt;/code&gt;，这是我们需要重点修改的文件。&lt;/p&gt;
+&lt;h3&gt;1. 站点配置&lt;/h3&gt;
+&lt;p&gt;打开 &lt;code&gt;src/config.ts&lt;/code&gt; 文件，修改以下基本配置：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 站点基本信息
+export const siteConfig: SiteConfig = {
+  title: &quot;我的个人博客&quot;, // 博客标题
+  subtitle: &quot;分享技术与生活&quot;, // 博客副标题
+  description: &quot;这是一个基于 Fuwari 主题的个人博客&quot;, // 博客描述
+  keywords: [&quot;博客&quot;, &quot;技术&quot;, &quot;生活&quot;], // 关键词
+  language: &quot;zh-CN&quot;, // 语言
+  favicon: &quot;/favicon/favicon-light-32.png&quot;, // 网站图标
+  themeColor: &quot;#3b82f6&quot;, // 主题颜色
+  postPerPage: 8, // 每页显示的文章数量
+  showNavLinks: true, // 是否显示导航链接
+  navLinks: [
+    { name: &quot;首页&quot;, url: &quot;/&quot; },
+    { name: &quot;归档&quot;, url: &quot;/archive/&quot; },
+    { name: &quot;关于&quot;, url: &quot;/about/&quot; },
+  ], // 导航链接
+  postsUrl: &quot;posts&quot;, // 文章目录
+  showPostDate: true, // 是否显示文章日期
+  showPostReadingTime: true, // 是否显示阅读时间
+  showPostExcerpt: true, // 是否显示文章摘要
+  showPostTags: true, // 是否显示文章标签
+  showPostCategories: true, // 是否显示文章分类
+  showPostAuthor: true, // 是否显示文章作者
+  author: &quot;你的名字&quot;, // 作者名称
+  email: &quot;your-email@example.com&quot;, // 作者邮箱
+  github: &quot;your-github-username&quot;, // GitHub 用户名
+  twitter: &quot;your-twitter-username&quot;, // Twitter 用户名（可选）
+  avatar: &quot;/avatar.png&quot;, // 头像路径
+  banner: &quot;/banner.png&quot;, // 首页横幅图片
+  footerText: &quot;© 2026 我的个人博客. All rights reserved.&quot;, // 页脚文本
+  rssTitle: &quot;我的个人博客 RSS&quot;, // RSS 标题
+  rssDescription: &quot;我的个人博客的 RSS 订阅&quot;, // RSS 描述
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;2. 主题配置&lt;/h3&gt;
+&lt;p&gt;修改主题相关配置：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 主题配置
+export const themeConfig: ThemeConfig = {
+  accentColor: &quot;#3b82f6&quot;, // 强调色
+  darkMode: &quot;system&quot;, // 深色模式：system（跟随系统）、light（浅色）、dark（深色）
+  codeTheme: &quot;github-light&quot;, // 代码高亮主题：github-light、github-dark、okaidia 等
+  font: {
+    sans: &quot;&apos;Inter&apos;, sans-serif&quot;, // 无衬线字体
+    serif: &quot;&apos;Noto Serif SC&apos;, serif&quot;, // 衬线字体
+    mono: &quot;&apos;Fira Code&apos;, monospace&quot;, // 等宽字体
+  },
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;3. 评论系统配置&lt;/h3&gt;
+&lt;p&gt;Fuwari 支持多种评论系统，你可以根据需要选择并配置：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 评论系统配置
+export const commentConfig: CommentConfig = {
+  enable: true, // 是否启用评论
+  provider: &quot;giscus&quot;, // 评论系统：giscus、utterances、disqus、twikoo
+  giscus: {
+    repo: &quot;your-username/your-repo&quot;, // GitHub 仓库
+    repoId: &quot;your-repo-id&quot;, // 仓库 ID
+    category: &quot;Announcements&quot;, // 评论分类
+    categoryId: &quot;your-category-id&quot;, // 分类 ID
+    mapping: &quot;pathname&quot;, // 评论映射方式
+    reactionsEnabled: &quot;1&quot;, // 是否启用表情反应
+    emitMetadata: &quot;0&quot;, // 是否发送元数据
+    inputPosition: &quot;bottom&quot;, // 输入框位置
+    theme: &quot;light&quot;, // 主题
+    lang: &quot;zh-CN&quot;, // 语言
+  },
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;第四步：创建内容&lt;/h2&gt;
+&lt;h3&gt;1. 创建文章&lt;/h3&gt;
+&lt;p&gt;在 &lt;code&gt;src/content/posts&lt;/code&gt; 目录下创建 Markdown 文件来添加文章。每个文章文件需要包含前置元数据（frontmatter）：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;---
+title: &quot;文章标题&quot;
+description: &quot;文章描述&quot;
+date: 2026-01-28
+category: &quot;分类&quot;
+tags: [&quot;标签1&quot;, &quot;标签2&quot;]
+cover: &quot;/path/to/cover-image.jpg&quot;
+draft: false
+---
+
+# 文章内容
+
+这里是文章的正文内容，使用 Markdown 语法编写。
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;2. 添加图片&lt;/h3&gt;
+&lt;p&gt;你可以在文章中使用相对路径引用图片，建议将图片放在 &lt;code&gt;public&lt;/code&gt; 目录下，例如：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;![图片描述](/images/image.jpg)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;第五步：本地预览&lt;/h2&gt;
+&lt;p&gt;在完成基本配置和内容创建后，我们可以在本地预览博客效果：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;npm run dev
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后打开浏览器访问终端中显示的本地地址（通常是 &lt;code&gt;http://localhost:3000&lt;/code&gt;），你就能看到你的 Fuwari 博客了！&lt;/p&gt;
+&lt;h2&gt;第六步：构建与部署&lt;/h2&gt;
+&lt;h3&gt;1. 构建项目&lt;/h3&gt;
+&lt;p&gt;当你满意本地预览效果后，可以构建生产版本：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pnpm run build
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;构建完成后，生成的静态文件会存放在 &lt;code&gt;dist&lt;/code&gt; 目录中。&lt;/p&gt;
+&lt;h3&gt;2. 部署选项&lt;/h3&gt;
+&lt;h4&gt;部署到 Vercel（推荐）&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;登录 &lt;a href=&quot;https://vercel.com/&quot;&gt;Vercel&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;点击 &quot;New Project&quot;&lt;/li&gt;
+&lt;li&gt;选择你的博客仓库&lt;/li&gt;
+&lt;li&gt;按照提示完成部署配置&lt;/li&gt;
+&lt;li&gt;部署完成后，Vercel 会为你生成一个域名&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4&gt;部署到 GitHub Pages&lt;/h4&gt;
+&lt;ol&gt;
+&lt;li&gt;构建项目：&lt;code&gt;pnpm run build&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;安装 &lt;code&gt;gh-pages&lt;/code&gt; 包：&lt;code&gt;pnpm add -D gh-pages&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在 &lt;code&gt;package.json&lt;/code&gt; 中添加部署脚本：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;&quot;scripts&quot;: {
+  &quot;deploy&quot;: &quot;gh-pages -d dist&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;运行部署命令：&lt;code&gt;npm run deploy&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在 GitHub 仓库设置中，将 GitHub Pages 的源设置为 &lt;code&gt;gh-pages&lt;/code&gt; 分支&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;第七步：高级自定义&lt;/h2&gt;
+&lt;h3&gt;1. 添加自定义页面&lt;/h3&gt;
+&lt;p&gt;除了默认的首页、归档和关于页面，你还可以添加自定义页面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在 &lt;code&gt;src/pages&lt;/code&gt; 目录下创建新的 Astro 文件，例如 &lt;code&gt;contact.astro&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;编写页面内容：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;---
+// 页面组件
+---
+
+&amp;lt;main&amp;gt;
+  &amp;lt;h1&amp;gt;联系我&amp;lt;/h1&amp;gt;
+  &amp;lt;p&amp;gt;这是联系页面&amp;lt;/p&amp;gt;
+&amp;lt;/main&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;在 &lt;code&gt;src/config.ts&lt;/code&gt; 中的 &lt;code&gt;navLinks&lt;/code&gt; 添加导航链接&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;2. 自定义主题&lt;/h3&gt;
+&lt;p&gt;你可以通过修改 &lt;code&gt;src/styles&lt;/code&gt; 目录下的 CSS 文件来自定义主题样式，或者在 &lt;code&gt;src/config.ts&lt;/code&gt; 中调整主题配置。&lt;/p&gt;
+&lt;h3&gt;3. 添加插件&lt;/h3&gt;
+&lt;p&gt;Fuwari 支持通过 Astro 的插件系统扩展功能。你可以在 &lt;code&gt;astro.config.mjs&lt;/code&gt; 文件中添加插件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sitemap from &quot;@astrojs/sitemap&quot;;
+import tailwind from &quot;@astrojs/tailwind&quot;;
+
+export default defineConfig({
+  // ...
+  integrations: [
+    tailwind(),
+    sitemap(),
+    // 添加其他插件
+  ],
+  // ...
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;常见问题与解决方案&lt;/h2&gt;
+&lt;h3&gt;1. 本地预览时样式丢失&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;解决方案&lt;/strong&gt;：检查是否正确安装了依赖，尝试重新运行 &lt;code&gt;pnpm install&lt;/code&gt;。&lt;/p&gt;
+&lt;h3&gt;2. 部署后页面显示 404&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;解决方案&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;检查路由配置是否正确&lt;/li&gt;
+&lt;li&gt;对于 GitHub Pages，确保设置了正确的 &lt;code&gt;base&lt;/code&gt; 路径&lt;/li&gt;
+&lt;li&gt;对于 Vercel，检查构建配置是否正确&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. 评论系统不显示&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;解决方案&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;确保正确配置了评论系统的参数&lt;/li&gt;
+&lt;li&gt;检查仓库权限设置&lt;/li&gt;
+&lt;li&gt;对于 giscus，确保在 GitHub 上启用了 Discussions&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;4. 图片不显示&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;解决方案&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;检查图片路径是否正确&lt;/li&gt;
+&lt;li&gt;确保图片文件已上传到正确的位置&lt;/li&gt;
+&lt;li&gt;检查文件权限&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;总结&lt;/h2&gt;
+&lt;p&gt;通过本教程，你已经成功从 0 搭建了一个基于 Fuwari 主题的个人博客。Fuwari 作为一款现代的 Astro 博客主题，不仅外观美观，而且功能强大，支持多种评论系统、响应式设计和丰富的自定义选项。&lt;/p&gt;
+&lt;p&gt;现在，你可以开始在你的博客上分享知识、记录生活了。随着你对 Fuwari 的使用越来越熟悉，你可以尝试更多高级自定义，让你的博客更加个性化。&lt;/p&gt;
+&lt;p&gt;祝你博客之旅愉快！&lt;/p&gt;
+&lt;h2&gt;参考资料&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/saicaca/fuwari&quot;&gt;Fuwari 官方文档&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://docs.astro.build/&quot;&gt;Astro 官方文档&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://vercel.com/docs&quot;&gt;Vercel 部署指南&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://docs.github.com/en/pages&quot;&gt;GitHub Pages 部署指南&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded></item></channel></rss>
